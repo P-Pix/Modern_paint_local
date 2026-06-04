@@ -329,6 +329,13 @@
       background-size: 24px 24px;
       background-position: 0 0, 0 12px, 12px -12px, -12px 0;
       scrollbar-gutter: stable both-edges;
+      overscroll-behavior: contain;
+    }
+
+    .stage-wrap.panning,
+    .stage-wrap.panning canvas {
+      cursor: grabbing !important;
+      user-select: none;
     }
 
     .canvas-shell {
@@ -1168,7 +1175,7 @@
       canvas.style.width = Math.round(state.canvasW * state.zoom) + 'px';
       canvas.style.height = Math.round(state.canvasH * state.zoom) + 'px';
       drawScene(ctx, true);
-      statusBox.textContent = `Canevas : ${state.canvasW} x ${state.canvasH} px | ${state.objects.length} élément(s) | outil : ${toolName(state.tool)}`;
+      statusBox.textContent = `Canevas : ${state.canvasW} x ${state.canvasH} px | ${state.objects.length} élément(s) | outil : ${toolName(state.tool)} | clic droit + glisser : déplacer la vue | Ctrl + molette : zoom`;
       updateButtons();
       updateLayers();
       updateSelectionPanel();
@@ -1273,7 +1280,77 @@
       render();
     }
 
+    function startWorkspacePan(evt) {
+      // Clic droit + glisser : deplace la vue autour du canevas, sans modifier les calques.
+      if (evt.button !== 2) return;
+      drag = {
+        mode: 'pan',
+        target: stageWrap,
+        startClientX: evt.clientX,
+        startClientY: evt.clientY,
+        startScrollLeft: stageWrap.scrollLeft,
+        startScrollTop: stageWrap.scrollTop
+      };
+      stageWrap.classList.add('panning');
+      try { stageWrap.setPointerCapture(evt.pointerId); } catch (_) {}
+      evt.preventDefault();
+      evt.stopPropagation();
+    }
+
+    function moveWorkspacePan(evt) {
+      if (!drag || drag.mode !== 'pan') return;
+      stageWrap.scrollLeft = drag.startScrollLeft - (evt.clientX - drag.startClientX);
+      stageWrap.scrollTop = drag.startScrollTop - (evt.clientY - drag.startClientY);
+      evt.preventDefault();
+      evt.stopPropagation();
+    }
+
+    function endWorkspacePan(evt) {
+      if (!drag || drag.mode !== 'pan') return;
+      drag = null;
+      stageWrap.classList.remove('panning');
+      try { stageWrap.releasePointerCapture(evt.pointerId); } catch (_) {}
+      evt.preventDefault();
+      evt.stopPropagation();
+    }
+
+    function setZoomPercent(percent) {
+      const nextPercent = clamp(Math.round(percent), Number(ui.zoomInput.min) || 20, Number(ui.zoomInput.max) || 220);
+      state.zoom = nextPercent / 100;
+      ui.zoomInput.value = String(nextPercent);
+      ui.zoomValue.textContent = nextPercent + '%';
+    }
+
+    function zoomCanvasWithWheel(evt) {
+      // Ctrl + molette sur le canevas : zoom/dezoom du canevas seulement, sans zoomer la page.
+      if (!evt.ctrlKey && !evt.metaKey) return;
+
+      evt.preventDefault();
+      evt.stopPropagation();
+
+      const before = canvas.getBoundingClientRect();
+      const oldZoom = state.zoom;
+      const contentX = (evt.clientX - before.left) / oldZoom;
+      const contentY = (evt.clientY - before.top) / oldZoom;
+      const direction = evt.deltaY < 0 ? 1 : -1;
+      const step = evt.shiftKey ? 4 : 8;
+      const currentPercent = Math.round(state.zoom * 100);
+
+      setZoomPercent(currentPercent + direction * step);
+      if (state.zoom === oldZoom) return;
+
+      render();
+      updatePanels();
+
+      const after = canvas.getBoundingClientRect();
+      const wantedScreenX = after.left + contentX * state.zoom;
+      const wantedScreenY = after.top + contentY * state.zoom;
+      stageWrap.scrollLeft += wantedScreenX - evt.clientX;
+      stageWrap.scrollTop += wantedScreenY - evt.clientY;
+    }
+
     function startPointer(evt) {
+      if (evt.button === 2) return;
       const pos = pointerPos(evt);
       showError('');
 
@@ -2199,7 +2276,7 @@
     ui.autoCropCanvasBtn.addEventListener('click', autoCropCanvasToContent);
     ui.fitToObjectsBtn.addEventListener('click', fitCanvasToObjects);
     ui.zoomInput.addEventListener('input', () => {
-      state.zoom = Number(ui.zoomInput.value) / 100;
+      setZoomPercent(Number(ui.zoomInput.value));
       render();
       updatePanels();
     });
@@ -2255,6 +2332,13 @@
       updatePanels();
     });
 
+    stageWrap.addEventListener('contextmenu', e => e.preventDefault());
+    stageWrap.addEventListener('pointerdown', startWorkspacePan, true);
+    stageWrap.addEventListener('pointermove', moveWorkspacePan);
+    stageWrap.addEventListener('pointerup', endWorkspacePan);
+    stageWrap.addEventListener('pointercancel', endWorkspacePan);
+
+    canvas.addEventListener('wheel', zoomCanvasWithWheel, { passive: false });
     canvas.addEventListener('pointerdown', startPointer);
     canvas.addEventListener('pointermove', movePointer);
     canvas.addEventListener('pointerup', endPointer);
