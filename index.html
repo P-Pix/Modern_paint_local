@@ -1175,7 +1175,6 @@
       canvas.style.width = Math.round(state.canvasW * state.zoom) + 'px';
       canvas.style.height = Math.round(state.canvasH * state.zoom) + 'px';
       drawScene(ctx, true);
-      statusBox.textContent = `Canevas : ${state.canvasW} x ${state.canvasH} px | ${state.objects.length} élément(s) | outil : ${toolName(state.tool)} | clic droit + glisser : déplacer la vue | Ctrl + molette : zoom`;
       updateButtons();
       updateLayers();
       updateSelectionPanel();
