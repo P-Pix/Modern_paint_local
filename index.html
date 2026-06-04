@@ -1322,7 +1322,7 @@
     }
 
     function zoomCanvasWithWheel(evt) {
-      // Ctrl + molette sur le canevas : zoom/dezoom du canevas seulement, sans zoomer la page.
+      // Ctrl + molette sur toute la zone de travail stageWrap : zoom/dezoom du canevas seulement, sans zoomer la page.
       if (!evt.ctrlKey && !evt.metaKey) return;
 
       evt.preventDefault();
@@ -2338,7 +2338,7 @@
     stageWrap.addEventListener('pointerup', endWorkspacePan);
     stageWrap.addEventListener('pointercancel', endWorkspacePan);
 
-    canvas.addEventListener('wheel', zoomCanvasWithWheel, { passive: false });
+    stageWrap.addEventListener('wheel', zoomCanvasWithWheel, { passive: false });
     canvas.addEventListener('pointerdown', startPointer);
     canvas.addEventListener('pointermove', movePointer);
     canvas.addEventListener('pointerup', endPointer);
