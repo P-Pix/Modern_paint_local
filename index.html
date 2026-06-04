@@ -351,6 +351,25 @@
         <p class="hint">Laisse la netteté autour de 25-45% pour les photos. Augmente-la pour les images avec du texte ou des lignes fines. Le mode contours durs évite le lissage, mais peut créer des escaliers sur les photos.</p>
       </fieldset>
 
+      <fieldset>
+        <legend>Filigrane</legend>
+        <div class="check-row">
+          <input id="addWatermark" type="checkbox" disabled />
+          <label for="addWatermark" style="margin:0;">Ajouter un filigrane à l'export</label>
+        </div>
+
+        <label for="watermarkText">Texte du filigrane</label>
+        <input id="watermarkText" type="text" value="FILIGRANE" disabled />
+
+        <div class="range-head">
+          <label for="watermarkOpacity" style="margin-bottom:6px;">Opacité du filigrane</label>
+          <span id="watermarkOpacityValue" class="range-value">18%</span>
+        </div>
+        <input id="watermarkOpacity" type="range" min="5" max="60" step="1" value="18" disabled />
+
+        <p class="hint">Le filigrane est ajouté uniquement dans le fichier exporté : l'image de travail affichée à l'écran reste inchangée.</p>
+      </fieldset>
+
       <div class="actions">
         <button id="downloadBtn" class="primary" type="button" disabled>Télécharger le PNG</button>
       </div>
@@ -371,6 +390,10 @@
     const sharpness = document.getElementById('sharpness');
     const sharpnessValue = document.getElementById('sharpnessValue');
     const hardEdges = document.getElementById('hardEdges');
+    const addWatermark = document.getElementById('addWatermark');
+    const watermarkText = document.getElementById('watermarkText');
+    const watermarkOpacity = document.getElementById('watermarkOpacity');
+    const watermarkOpacityValue = document.getElementById('watermarkOpacityValue');
 
     const inputs = {
       cropX: document.getElementById('cropX'),
@@ -409,8 +432,17 @@
       fileName.disabled = !enabled;
       sharpness.disabled = !enabled || hardEdges.checked;
       hardEdges.disabled = !enabled;
+      addWatermark.disabled = !enabled;
       fitCropBtn.disabled = !enabled;
       downloadBtn.disabled = !enabled;
+      syncWatermarkControls();
+    }
+
+    function syncWatermarkControls() {
+      const enabled = !!image && !addWatermark.disabled && addWatermark.checked;
+      watermarkText.disabled = !enabled;
+      watermarkOpacity.disabled = !enabled;
+      watermarkOpacityValue.textContent = watermarkOpacity.value + '%';
     }
 
     function sanitizeFilename(name) {
@@ -806,6 +838,43 @@
       return canvas;
     }
 
+    function applyWatermark(canvas, text, opacityPercent) {
+      const label = (text || 'FILIGRANE').trim();
+      if (!label) return canvas;
+
+      const w = canvas.width;
+      const h = canvas.height;
+      const wctx = canvas.getContext('2d', { alpha: true });
+      const opacity = clamp(Number(opacityPercent) || 18, 5, 60) / 100;
+      const fontSize = clamp(Math.round(Math.min(w, h) / 9), 18, 96);
+      const diagonal = Math.sqrt(w * w + h * h);
+
+      wctx.save();
+      wctx.globalAlpha = opacity;
+      wctx.translate(w / 2, h / 2);
+      wctx.rotate(-Math.PI / 7);
+      wctx.font = `800 ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+      wctx.textAlign = 'center';
+      wctx.textBaseline = 'middle';
+      wctx.fillStyle = '#ffffff';
+      wctx.strokeStyle = 'rgba(15, 23, 42, .7)';
+      wctx.lineWidth = Math.max(2, Math.round(fontSize * 0.05));
+
+      const textWidth = Math.max(1, wctx.measureText(label).width);
+      const stepX = Math.max(textWidth + fontSize * 3, fontSize * 6);
+      const stepY = Math.max(fontSize * 3, 70);
+
+      for (let y = -diagonal; y <= diagonal; y += stepY) {
+        for (let x = -diagonal; x <= diagonal; x += stepX) {
+          wctx.strokeText(label, x, y);
+          wctx.fillText(label, x, y);
+        }
+      }
+
+      wctx.restore();
+      return canvas;
+    }
+
     async function exportPng() {
       if (!image || !crop) return;
       showError('');
@@ -826,6 +895,7 @@
 
         let outputCanvas = drawHighQuality(cropCanvas, outW, outH, hardEdges.checked);
         if (!hardEdges.checked) outputCanvas = applyUnsharpMask(outputCanvas, sharpness.value);
+        if (addWatermark.checked) outputCanvas = applyWatermark(outputCanvas, watermarkText.value, watermarkOpacity.value);
         outputCanvas.toBlob(blob => {
           if (!blob) {
             showError('Impossible de generer le PNG.');
@@ -867,6 +937,10 @@
     hardEdges.addEventListener('change', () => {
       sharpness.disabled = hardEdges.checked;
       sharpnessValue.textContent = hardEdges.checked ? 'désactivée' : sharpness.value + '%';
+    });
+    addWatermark.addEventListener('change', syncWatermarkControls);
+    watermarkOpacity.addEventListener('input', () => {
+      watermarkOpacityValue.textContent = watermarkOpacity.value + '%';
     });
 
     canvas.addEventListener('pointerdown', startDrag);
