@@ -1281,7 +1281,6 @@
     }
 
     function startWorkspacePan(evt) {
-      // Clic droit + glisser : deplace la vue autour du canevas, sans modifier les calques.
       if (evt.button !== 2) return;
       drag = {
         mode: 'pan',
@@ -1322,7 +1321,6 @@
     }
 
     function zoomCanvasWithWheel(evt) {
-      // Ctrl + molette sur toute la zone de travail stageWrap : zoom/dezoom du canevas seulement, sans zoomer la page.
       if (!evt.ctrlKey && !evt.metaKey) return;
 
       evt.preventDefault();
@@ -1814,8 +1812,6 @@
       let w = readExportNumber(ui.exportW, state.canvasW);
       let h = readExportNumber(ui.exportH, state.canvasH);
 
-      // Pendant la saisie, on ne remplace pas un champ vide par la taille du canevas.
-      // Cela évite le blocage quand on efface l'ancienne valeur pour taper 200, 150, etc.
       if (source === 'h') {
         if (h === null) return { w: readExportNumber(ui.exportW, state.canvasW) || state.canvasW, h: state.canvasH };
         w = clamp(Math.round(h * ratio), 1, 12000);
@@ -1846,9 +1842,6 @@
       lastExportEdited = source === 'h' ? 'h' : 'w';
       if (exportTypingTimer) clearTimeout(exportTypingTimer);
 
-      // Important : on ne modifie pas l'autre champ pendant la frappe.
-      // Exemple : pour taper 200, l'utilisateur saisit d'abord 2, puis 20, puis 200.
-      // Si on recalcule la hauteur a chaque chiffre, on peut tomber sous 1 px et casser la saisie.
       exportTypingTimer = setTimeout(() => {
         exportTypingTimer = null;
       }, 700);
