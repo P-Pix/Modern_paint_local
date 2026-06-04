@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Nouveau Paint Local — éditeur d’images local" width="100%">
+  <img src="banner.svg" alt="Nouveau Paint Local — éditeur d’images local" width="100%">
 </p>
 
 <p align="center">
