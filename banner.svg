@@ -1,0 +1,136 @@
+<svg width="1400" height="420" viewBox="0 0 1400 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Nouveau Paint Local</title>
+  <desc id="desc">Bannière GitHub pour un éditeur d’images local type Paint avancé</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1400" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F172A"/>
+      <stop offset="0.45" stop-color="#1E3A8A"/>
+      <stop offset="1" stop-color="#0EA5E9"/>
+    </linearGradient>
+
+    <radialGradient id="glow1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(220 70) rotate(28) scale(420 220)">
+      <stop stop-color="#93C5FD" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#93C5FD" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="glow2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1100 320) rotate(8) scale(560 280)">
+      <stop stop-color="#A7F3D0" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#A7F3D0" stop-opacity="0"/>
+    </radialGradient>
+
+    <filter id="cardShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="22" stdDeviation="22" flood-color="#020617" flood-opacity="0.34"/>
+    </filter>
+
+    <filter id="smallShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#020617" flood-opacity="0.24"/>
+    </filter>
+
+    <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse">
+      <path d="M 36 0 L 0 0 0 36" fill="none" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="1"/>
+    </pattern>
+
+    <style>
+      .title-kicker {
+        font-family: Inter, "Segoe UI", Arial, sans-serif;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: 4px;
+        fill: #FFFFFF;
+        stroke: #000000;
+        stroke-width: 4px;
+        paint-order: stroke fill;
+        stroke-linejoin: round;
+      }
+      .title-main {
+        font-family: Inter, "Segoe UI", Arial, sans-serif;
+        font-size: 68px;
+        font-weight: 900;
+        letter-spacing: -2px;
+        fill: #FFFFFF;
+        stroke: #000000;
+        stroke-width: 7px;
+        paint-order: stroke fill;
+        stroke-linejoin: round;
+      }
+      .title-sub {
+        font-family: Inter, "Segoe UI", Arial, sans-serif;
+        font-size: 26px;
+        font-weight: 600;
+        fill: #E0F2FE;
+        stroke: #000000;
+        stroke-width: 3px;
+        paint-order: stroke fill;
+        stroke-linejoin: round;
+      }
+      .pill-text {
+        font-family: Inter, "Segoe UI", Arial, sans-serif;
+        font-size: 16px;
+        font-weight: 800;
+        fill: #FFFFFF;
+        stroke: #000000;
+        stroke-width: 2.2px;
+        paint-order: stroke fill;
+        stroke-linejoin: round;
+      }
+    </style>
+  </defs>
+
+  <rect width="1400" height="420" rx="34" fill="url(#bg)"/>
+  <rect width="1400" height="420" rx="34" fill="url(#glow1)"/>
+  <rect width="1400" height="420" rx="34" fill="url(#glow2)"/>
+  <rect width="1400" height="420" rx="34" fill="url(#grid)"/>
+  <rect x="1" y="1" width="1398" height="418" rx="33" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="2"/>
+
+  <!-- Illustration -->
+  <g filter="url(#cardShadow)">
+    <rect x="905" y="72" width="350" height="252" rx="30" fill="#F8FAFC"/>
+    <rect x="930" y="98" width="300" height="200" rx="22" fill="#E0F2FE"/>
+    <rect x="952" y="118" width="256" height="158" rx="18" fill="#FFFFFF" stroke="#CBD5E1"/>
+
+    <rect x="970" y="136" width="92" height="58" rx="14" fill="#38BDF8"/>
+    <rect x="1080" y="136" width="100" height="14" rx="7" fill="#0F172A" fill-opacity="0.24"/>
+    <rect x="1080" y="160" width="82" height="14" rx="7" fill="#0F172A" fill-opacity="0.16"/>
+
+    <path d="M971 249C1008 214 1033 214 1066 246C1085 264 1102 267 1120 251C1144 229 1171 223 1190 249V258H971V249Z" fill="#2563EB"/>
+    <circle cx="1165" cy="204" r="22" fill="#FACC15"/>
+    <rect x="970" y="222" width="76" height="8" rx="4" fill="#0F172A" fill-opacity="0.12"/>
+  </g>
+
+  <g filter="url(#smallShadow)">
+    <rect x="822" y="244" width="176" height="94" rx="24" fill="#FFFFFF" fill-opacity="0.97"/>
+    <rect x="844" y="262" width="74" height="12" rx="6" fill="#0F172A" fill-opacity="0.14"/>
+    <path d="M855 291C874 268 902 262 922 289C936 308 956 307 972 282" stroke="#0EA5E9" stroke-width="10" stroke-linecap="round"/>
+  </g>
+
+  <g filter="url(#smallShadow)">
+    <rect x="1116" y="292" width="128" height="74" rx="22" fill="#FFFFFF" fill-opacity="0.97"/>
+    <path d="M1140 329C1156 309 1171 348 1188 324C1198 309 1212 335 1226 316" stroke="#2563EB" stroke-width="8" stroke-linecap="round"/>
+  </g>
+
+  <g opacity="0.88">
+    <circle cx="1220" cy="54" r="6" fill="#FDE68A"/>
+    <circle cx="1287" cy="110" r="7" fill="#A7F3D0"/>
+    <circle cx="1313" cy="155" r="5" fill="#BFDBFE"/>
+    <circle cx="836" cy="64" r="5" fill="#FCA5A5"/>
+  </g>
+
+  <!-- Text -->
+  <g>
+    <text class="title-kicker" x="96" y="142">ÉDITEUR D’IMAGES LOCAL</text>
+    <text class="title-main" x="96" y="218">Nouveau Paint Local</text>
+    <text class="title-sub" x="98" y="266">Compose, annote, recadre et exporte tes images directement dans le navigateur.</text>
+
+    <g transform="translate(96 306)">
+      <rect width="160" height="42" rx="21" fill="#FFFFFF" fill-opacity="0.14" stroke="#FFFFFF" stroke-opacity="0.18"/>
+      <text class="pill-text" x="24" y="28">100% local</text>
+
+      <rect x="178" width="182" height="42" rx="21" fill="#FFFFFF" fill-opacity="0.14" stroke="#FFFFFF" stroke-opacity="0.18"/>
+      <text class="pill-text" x="202" y="28">Sans serveur</text>
+
+      <rect x="378" width="194" height="42" rx="21" fill="#FFFFFF" fill-opacity="0.14" stroke="#FFFFFF" stroke-opacity="0.18"/>
+      <text class="pill-text" x="402" y="28">Mini Paint avancé</text>
+    </g>
+  </g>
+</svg>
