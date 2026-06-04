@@ -760,6 +760,8 @@
     let idSeq = 1;
     let history = [];
     let redoStack = [];
+    let lastExportEdited = 'w';
+    let exportTypingTimer = null;
 
     const HANDLE = 12;
     const ROTATE_OFFSET = 38;
@@ -1589,30 +1591,71 @@
       if (!ui.exportW || !ui.exportH) return;
       ui.exportW.value = state.canvasW;
       ui.exportH.value = state.canvasH;
+      lastExportEdited = 'w';
     }
 
-    function normalizeExportSize(source = 'w') {
-      const ratio = state.canvasW / Math.max(1, state.canvasH);
-      let w = Math.round(Number(ui.exportW.value) || state.canvasW);
-      let h = Math.round(Number(ui.exportH.value) || state.canvasH);
+    function canvasRatio() {
+      return state.canvasW / Math.max(1, state.canvasH);
+    }
 
+    function readExportNumber(input, fallback) {
+      const raw = String(input.value || '').trim();
+      if (raw === '') return null;
+      const value = Number(raw.replace(',', '.'));
+      if (!Number.isFinite(value)) return fallback;
+      return clamp(Math.round(value), 1, 12000);
+    }
+
+    function normalizeExportSize(source = 'w', commitTypedField = false) {
+      if (!ui.exportW || !ui.exportH) return { w: state.canvasW, h: state.canvasH };
+      lastExportEdited = source;
+      const ratio = canvasRatio();
+      let w = readExportNumber(ui.exportW, state.canvasW);
+      let h = readExportNumber(ui.exportH, state.canvasH);
+
+      // Pendant la saisie, on ne remplace pas un champ vide par la taille du canevas.
+      // Cela évite le blocage quand on efface l'ancienne valeur pour taper 200, 150, etc.
       if (source === 'h') {
-        h = clamp(h, 1, 12000);
+        if (h === null) return { w: readExportNumber(ui.exportW, state.canvasW) || state.canvasW, h: state.canvasH };
         w = clamp(Math.round(h * ratio), 1, 12000);
-        h = Math.max(1, Math.round(w / ratio));
+        ui.exportH.value = commitTypedField ? h : ui.exportH.value;
+        ui.exportW.value = w;
       } else {
-        w = clamp(w, 1, 12000);
+        if (w === null) return { w: state.canvasW, h: readExportNumber(ui.exportH, state.canvasH) || state.canvasH };
         h = clamp(Math.round(w / ratio), 1, 12000);
-        w = Math.max(1, Math.round(h * ratio));
+        ui.exportW.value = commitTypedField ? w : ui.exportW.value;
+        ui.exportH.value = h;
       }
 
-      ui.exportW.value = w;
-      ui.exportH.value = h;
-      return { w, h };
+      return {
+        w: readExportNumber(ui.exportW, state.canvasW) || state.canvasW,
+        h: readExportNumber(ui.exportH, state.canvasH) || state.canvasH
+      };
+    }
+
+    function commitExportSize(source = lastExportEdited) {
+      if (exportTypingTimer) {
+        clearTimeout(exportTypingTimer);
+        exportTypingTimer = null;
+      }
+      return normalizeExportSize(source === 'h' ? 'h' : 'w', true);
+    }
+
+    function onExportSizeTyping(source) {
+      lastExportEdited = source === 'h' ? 'h' : 'w';
+      if (exportTypingTimer) clearTimeout(exportTypingTimer);
+
+      // Important : on ne modifie pas l'autre champ pendant la frappe.
+      // Exemple : pour taper 200, l'utilisateur saisit d'abord 2, puis 20, puis 200.
+      // Si on recalcule la hauteur a chaque chiffre, on peut tomber sous 1 px et casser la saisie.
+      exportTypingTimer = setTimeout(() => {
+        exportTypingTimer = null;
+      }, 700);
     }
 
     function currentExportSize() {
-      return normalizeExportSize('w') || { w: state.canvasW, h: state.canvasH };
+      const source = lastExportEdited === 'h' ? 'h' : 'w';
+      return commitExportSize(source) || { w: state.canvasW, h: state.canvasH };
     }
 
     function sanitizeFilename(name, mime) {
@@ -2059,10 +2102,12 @@
     });
 
     ui.watermarkOpacity.addEventListener('input', () => updatePanels());
-    ui.exportW.addEventListener('input', () => normalizeExportSize('w'));
-    ui.exportH.addEventListener('input', () => normalizeExportSize('h'));
-    ui.exportW.addEventListener('change', () => normalizeExportSize('w'));
-    ui.exportH.addEventListener('change', () => normalizeExportSize('h'));
+    ui.exportW.addEventListener('input', () => onExportSizeTyping('w'));
+    ui.exportH.addEventListener('input', () => onExportSizeTyping('h'));
+    ui.exportW.addEventListener('change', () => commitExportSize('w'));
+    ui.exportH.addEventListener('change', () => commitExportSize('h'));
+    ui.exportW.addEventListener('blur', () => commitExportSize('w'));
+    ui.exportH.addEventListener('blur', () => commitExportSize('h'));
     ui.downloadBtn.addEventListener('click', exportImage);
     ui.saveProjectBtn.addEventListener('click', saveProject);
     ui.loadProjectInput.addEventListener('change', e => loadProjectFile(e.target.files[0]));
