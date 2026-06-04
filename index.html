@@ -633,6 +633,21 @@
           <option value="image/jpeg">JPEG</option>
           <option value="image/webp">WEBP</option>
         </select>
+        <div class="row">
+          <div>
+            <label for="exportW">Largeur export</label>
+            <input id="exportW" type="number" min="1" max="12000" step="1" value="1000" />
+          </div>
+          <div>
+            <label for="exportH">Hauteur export</label>
+            <input id="exportH" type="number" min="1" max="12000" step="1" value="700" />
+          </div>
+        </div>
+        <div class="check-row">
+          <input id="exportKeepCanvasRatio" type="checkbox" checked disabled />
+          <label for="exportKeepCanvasRatio">Conserver les proportions du canevas</label>
+        </div>
+        <p class="hint">Ces dimensions changent uniquement le fichier téléchargé. Le canevas de travail reste inchangé.</p>
         <div class="actions">
           <button id="downloadBtn" class="primary" type="button">Télécharger l'image finale</button>
           <button id="saveProjectBtn" type="button">Sauvegarder le projet JSON</button>
@@ -714,6 +729,9 @@
       watermarkOpacityValue: document.getElementById('watermarkOpacityValue'),
       fileName: document.getElementById('fileName'),
       exportFormat: document.getElementById('exportFormat'),
+      exportW: document.getElementById('exportW'),
+      exportH: document.getElementById('exportH'),
+      exportKeepCanvasRatio: document.getElementById('exportKeepCanvasRatio'),
       downloadBtn: document.getElementById('downloadBtn'),
       saveProjectBtn: document.getElementById('saveProjectBtn'),
       loadProjectInput: document.getElementById('loadProjectInput')
@@ -1478,6 +1496,7 @@
       state.canvasH = h;
       ui.canvasW.value = w;
       ui.canvasH.value = h;
+      syncExportSizeToCanvas();
       state.cropRect = null;
       cropBtn.disabled = true;
       if (commit) pushHistory();
@@ -1566,6 +1585,36 @@
       return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
     }
 
+    function syncExportSizeToCanvas() {
+      if (!ui.exportW || !ui.exportH) return;
+      ui.exportW.value = state.canvasW;
+      ui.exportH.value = state.canvasH;
+    }
+
+    function normalizeExportSize(source = 'w') {
+      const ratio = state.canvasW / Math.max(1, state.canvasH);
+      let w = Math.round(Number(ui.exportW.value) || state.canvasW);
+      let h = Math.round(Number(ui.exportH.value) || state.canvasH);
+
+      if (source === 'h') {
+        h = clamp(h, 1, 12000);
+        w = clamp(Math.round(h * ratio), 1, 12000);
+        h = Math.max(1, Math.round(w / ratio));
+      } else {
+        w = clamp(w, 1, 12000);
+        h = clamp(Math.round(w / ratio), 1, 12000);
+        w = Math.max(1, Math.round(h * ratio));
+      }
+
+      ui.exportW.value = w;
+      ui.exportH.value = h;
+      return { w, h };
+    }
+
+    function currentExportSize() {
+      return normalizeExportSize('w') || { w: state.canvasW, h: state.canvasH };
+    }
+
     function sanitizeFilename(name, mime) {
       const ext = mime === 'image/jpeg' ? '.jpg' : mime === 'image/webp' ? '.webp' : '.png';
       let cleaned = (name || 'composition')
@@ -1576,7 +1625,7 @@
       return (cleaned || 'composition') + ext;
     }
 
-    function addWatermark(targetCtx) {
+    function addWatermark(targetCtx, targetW = state.canvasW, targetH = state.canvasH) {
       if (!ui.watermarkEnabled.checked) return;
       const text = ui.watermarkText.value.trim();
       if (!text) return;
@@ -1588,13 +1637,13 @@
       targetCtx.font = `700 ${size}px Arial, sans-serif`;
       targetCtx.textAlign = 'center';
       targetCtx.textBaseline = 'middle';
-      targetCtx.translate(state.canvasW / 2, state.canvasH / 2);
+      targetCtx.translate(targetW / 2, targetH / 2);
       targetCtx.rotate(-Math.PI / 6);
       const metrics = targetCtx.measureText(text);
       const stepX = Math.max(220, metrics.width + 130);
       const stepY = Math.max(130, size * 3.1);
-      for (let y = -state.canvasH * 1.2; y <= state.canvasH * 1.2; y += stepY) {
-        for (let x = -state.canvasW * 1.2; x <= state.canvasW * 1.2; x += stepX) {
+      for (let y = -targetH * 1.2; y <= targetH * 1.2; y += stepY) {
+        for (let x = -targetW * 1.2; x <= targetW * 1.2; x += stepX) {
           targetCtx.fillText(text, x, y);
         }
       }
@@ -1602,12 +1651,21 @@
     }
 
     function exportImage() {
+      const size = currentExportSize();
+      const scene = document.createElement('canvas');
+      scene.width = state.canvasW;
+      scene.height = state.canvasH;
+      const sceneCtx = scene.getContext('2d', { alpha: true });
+      drawScene(sceneCtx, false);
+
       const out = document.createElement('canvas');
-      out.width = state.canvasW;
-      out.height = state.canvasH;
+      out.width = size.w;
+      out.height = size.h;
       const outCtx = out.getContext('2d', { alpha: true });
-      drawScene(outCtx, false);
-      addWatermark(outCtx);
+      outCtx.imageSmoothingEnabled = true;
+      outCtx.imageSmoothingQuality = 'high';
+      outCtx.drawImage(scene, 0, 0, state.canvasW, state.canvasH, 0, 0, size.w, size.h);
+      addWatermark(outCtx, size.w, size.h);
       const mime = ui.exportFormat.value || 'image/png';
       out.toBlob(blob => {
         if (!blob) {
@@ -1651,6 +1709,7 @@
       idSeq = data.idSeq || idSeq;
       ui.canvasW.value = state.canvasW;
       ui.canvasH.value = state.canvasH;
+      syncExportSizeToCanvas();
       ui.bgColor.value = state.bgColor;
       for (const obj of state.objects) {
         if (obj.type === 'image' && obj.src) {
@@ -1838,6 +1897,7 @@
       state.canvasH = h;
       ui.canvasW.value = w;
       ui.canvasH.value = h;
+      syncExportSizeToCanvas();
       pushHistory();
       render();
     }
@@ -1858,6 +1918,7 @@
       state.canvasH = Math.max(1, maxY - minY + pad * 2);
       ui.canvasW.value = state.canvasW;
       ui.canvasH.value = state.canvasH;
+      syncExportSizeToCanvas();
       pushHistory();
       render();
       updatePanels();
@@ -1998,6 +2059,10 @@
     });
 
     ui.watermarkOpacity.addEventListener('input', () => updatePanels());
+    ui.exportW.addEventListener('input', () => normalizeExportSize('w'));
+    ui.exportH.addEventListener('input', () => normalizeExportSize('h'));
+    ui.exportW.addEventListener('change', () => normalizeExportSize('w'));
+    ui.exportH.addEventListener('change', () => normalizeExportSize('h'));
     ui.downloadBtn.addEventListener('click', exportImage);
     ui.saveProjectBtn.addEventListener('click', saveProject);
     ui.loadProjectInput.addEventListener('change', e => loadProjectFile(e.target.files[0]));
@@ -2074,6 +2139,7 @@
 
     window.addEventListener('resize', render);
 
+    syncExportSizeToCanvas();
     pushHistory();
     render();
     updatePanels();
